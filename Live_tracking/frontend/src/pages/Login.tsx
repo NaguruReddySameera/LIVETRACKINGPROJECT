@@ -129,7 +129,6 @@ const Login: React.FC = () => {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300"></div>
             </div>
-           */
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
