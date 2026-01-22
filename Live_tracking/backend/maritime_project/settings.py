@@ -226,10 +226,28 @@ SIMPLE_JWT = {
 }
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-]
+# - Set CORS_ALLOWED_ORIGINS in env for production, e.g.
+#   "https://your-frontend.vercel.app,https://yourdomain.com"
+_cors_allowed = _parse_csv_env("CORS_ALLOWED_ORIGINS")
+if _cors_allowed:
+    CORS_ALLOWED_ORIGINS = _cors_allowed
+else:
+    CORS_ALLOWED_ORIGINS = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+    ]
+
+# Optional convenience: allow all Vercel preview + production URLs.
+# Turn off by setting ALLOW_VERCEL_APP_ORIGINS=False
+ALLOW_VERCEL_APP_ORIGINS = os.getenv("ALLOW_VERCEL_APP_ORIGINS", "True") == "True"
+CORS_ALLOWED_ORIGIN_REGEXES = []
+if ALLOW_VERCEL_APP_ORIGINS:
+    CORS_ALLOWED_ORIGIN_REGEXES.append(r"^https://.*\.vercel\.app$")
+
+# CSRF trusted origins (needed for Django admin / any cookie-based POSTs)
+CSRF_TRUSTED_ORIGINS = _parse_csv_env("CSRF_TRUSTED_ORIGINS")
+if not CSRF_TRUSTED_ORIGINS and ALLOW_VERCEL_APP_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = ["https://*.vercel.app"]
 
 CORS_ALLOW_CREDENTIALS = True
 
