@@ -19,16 +19,31 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-dev-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = os.getenv('DEBUG', 'False') == 'True'
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
+def _parse_csv_env(name: str) -> list[str]:
+    raw = os.getenv(name, "")
+    return [v.strip() for v in raw.split(",") if v.strip()]
 
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# Render sets RENDER_EXTERNAL_HOSTNAME (e.g. "maritime-backend-7ccz.onrender.com")
+# https://render.com/docs/environment-variables#render-external-hostname
+_allowed_hosts = _parse_csv_env("ALLOWED_HOSTS")
+if _allowed_hosts:
+    ALLOWED_HOSTS = _allowed_hosts
+else:
+    # Sensible defaults for local/dev runs
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+
+_render_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+if _render_hostname:
+    ALLOWED_HOSTS.append(_render_hostname.strip())
+
+# De-duplicate while preserving order
+ALLOWED_HOSTS = list(dict.fromkeys([h for h in ALLOWED_HOSTS if h]))
 
 # Application definition
 INSTALLED_APPS = [
-    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -39,7 +54,7 @@ INSTALLED_APPS = [
     # Third-party apps
     'rest_framework',
     'rest_framework_simplejwt',
-    # 'corsheaders',
+    'corsheaders',
     'drf_yasg',
     'django_extensions',
     
@@ -51,9 +66,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    # 'corsheaders.middleware.CorsMiddleware',  # CORS must be before CommonMiddleware
+    'corsheaders.middleware.CorsMiddleware',  # CORS must be before CommonMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -215,8 +229,6 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3001',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
